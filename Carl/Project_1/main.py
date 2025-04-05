@@ -14,7 +14,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 
 
-def inspect_data():
+def inspect_data(data):
     """Inspecting the data, printing some observations and creating some 
     figures."""
 
@@ -61,13 +61,8 @@ def inspect_data():
     plt.show()
 
 
-def task_1():
-    """Solves task 1."""
-
-    # Seperate labels from data
-    labels = data["V1"].values
-    pixels = data.iloc[:, 1:].values
-
+def solve_task(pixels, labels):
+    """Solves task 1/2."""
 
     # Define classifier in pipeline
     # - A pipeline consists of some pre-processing and a classification model.
@@ -102,7 +97,7 @@ def task_1():
      #____Performs_normal_cross_validation_____________________________________
     print("\n________NORMAL_CROSS_VALIDATION______________")
     # Set parameters
-    number_of_random_trials = 1
+    number_of_random_trials = 5
     number_of_k_folds = 10
 
     # Initialize result dict
@@ -247,7 +242,7 @@ def task_1():
     plt.figure(figsize=(10, 7))
     plt.boxplot(c_list, tick_labels=["LogisticRegression"])
     plt.ylabel("c")
-    plt.title("Logistic regression paramter")
+    plt.title("Logistic regression parameter")
     plt.grid(True)
     plt.show()
 
@@ -266,15 +261,33 @@ def task_1():
     plt.show()
 
 
-def task_2():
-    # To-be implemented..
-    return
+def task_1(data):
+    
+    # Seperate labels from data and run model
+    labels = data["V1"].values
+    pixels = data.iloc[:, 1:].values
+    solve_task(pixels, labels)
+
+
+def task_2(data):
+    
+    # Seperate labels from data
+    labels = data["V1"].values
+    pixels = data.iloc[:, 1:].values
+
+    # Run model on each data fraction instance
+    data_fraction = [0.5, 0.25, 0.05]
+    for frac in data_fraction:
+        pixels_train, _, labels_train, _ = train_test_split(
+            pixels, labels, test_size=(1-frac), random_state=123, stratify=labels
+        )
+        print("\nSize of train set: " + str(round(pixels_train.shape[0])))
+        solve_task(pixels_train, labels_train)
 
 
 if __name__ == '__main__':
 
     data = pd.read_csv('Carl/Project_1/Numbers.txt', sep='\s+')
-
-    inspect_data()
-    task_1()
-    #task_2()
+    inspect_data(data)
+    task_1(data)
+    task_2(data)
