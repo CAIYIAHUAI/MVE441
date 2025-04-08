@@ -97,7 +97,7 @@ def solve_task(pixels, labels):
      #____Performs_normal_cross_validation_____________________________________
     print("\n________NORMAL_CROSS_VALIDATION______________")
     # Set parameters
-    number_of_random_trials = 5
+    number_of_random_trials = 10
     number_of_k_folds = 10
 
     # Initialize result dict
@@ -133,10 +133,22 @@ def solve_task(pixels, labels):
             # Print results
             print("- Trial " + str(i + 1) + ": Accuracy "
                 + str(round(scores.mean(), 4)) + ", sd " 
-                + str(round(scores.std(), 4)))
+                + str(round(scores.std(), 4)))            
 
+    # Box plot of scores
+    model_names = list(cross_validation_results.keys())
+    scores = [cross_validation_results[model] for model in model_names]
+    plt.figure(figsize=(10, 7))
+    plt.boxplot(scores, tick_labels=model_names)
+    plt.ylabel("Test score")
+    plt.title(
+        "Test score comparisions from "
+        + str(number_of_random_trials)
+        + " random trials")
+    plt.grid(True)
+    plt.show()
 
-     #____Performs_double_cross_validation_____________________________________
+    #____Performs_double_cross_validation_____________________________________
     print("\n________DOUBLE_CROSS_VALIDATION_WITH_TUNING__")
     
     # Parameter grid
@@ -145,10 +157,10 @@ def solve_task(pixels, labels):
             'clf__solver': ['svd', 'lsqr', 'eigen']
         },
         'LogisticRegression': {
-            'clf__C': [0.01, 0.1, 1, 10, 100]
+            'clf__C': [0.01, 0.03, 0.05, 0.07, 0.09, 1.1]
         },
         'kNN': {
-            'clf__n_neighbors': [1, 3, 5, 7, 9] 
+            'clf__n_neighbors': [1, 2, 3, 4, 5, 6, 7, 8] 
         }
     }
 
@@ -157,12 +169,12 @@ def solve_task(pixels, labels):
     number_of_inner_k_folds = 10
 
     # Initialize result dictionaries
-    train_error = {
+    train_score = {
         'LDA': [None]*number_of_outer_k_folds,
         'LogisticRegression': [None]*number_of_outer_k_folds,
         'kNN': [None]*number_of_outer_k_folds
     }
-    test_error = {
+    test_score = {
         'LDA': [None]*number_of_outer_k_folds,
         'LogisticRegression': [None]*number_of_outer_k_folds,
         'kNN': [None]*number_of_outer_k_folds
@@ -207,22 +219,22 @@ def solve_task(pixels, labels):
             grid_search.fit(pixels_train, labels_train)
             best_model = grid_search.best_estimator_
 
-            # Training error
+            # Training score (1 - error)
             labels_train_predicted = best_model.predict(pixels_train)
-            train_error[name][i] = accuracy_score(
+            train_score[name][i] = accuracy_score(
                 labels_train, labels_train_predicted
             )
 
-            # Test error
+            # Test score (1 - error)
             labels_test_predicted = best_model.predict(pixels_test)
-            test_error[name][i] = accuracy_score(
+            test_score[name][i] = accuracy_score(
                 labels_test, labels_test_predicted
             )
 
             # Store params
             best_params[name][i] = best_model.get_params()
 
-    # Store parameters
+    # Store relevant parameters
     c_list = {}
     c_list["LogisticRegression"] = [
         [
@@ -233,6 +245,12 @@ def solve_task(pixels, labels):
     c_list["kNN"] = [
         [
             best_params["kNN"][i]["clf__n_neighbors"] 
+            for i in range(number_of_outer_k_folds)
+        ]
+    ]
+    c_list["LDA"] = [
+        [
+            best_params["LDA"][i]["clf__solver"]
             for i in range(number_of_outer_k_folds)
         ]
     ]
@@ -248,8 +266,8 @@ def solve_task(pixels, labels):
         )
         print(
             "- Average accuracy " \
-            + str(round(np.mean(train_error[name]), 4)) + ", sd " \
-            + str(round(np.std(train_error[name]), 4))
+            + str(round(np.mean(train_score[name]), 4)) + ", sd " \
+            + str(round(np.std(train_score[name]), 4))
         )
 
         if name in ["LogisticRegression", "kNN"]:
@@ -258,16 +276,20 @@ def solve_task(pixels, labels):
                 + str(round(np.mean(c_list[name]), 4)) + ", sd " \
                 + str(round(np.std(c_list[name]), 4))
             )
+        if name == ["LDA"]:
+            print(
+                "- Solver used"
+            )
 
     print("\nPlotting results...")
 
-    # Create box plots of test error for all three models
-    model_names = list(test_error.keys())
-    errors = [test_error[model] for model in model_names]
+    # Create box plots of test scores for all three models
+    model_names = list(test_score.keys())
+    scores = [test_score[model] for model in model_names]
     plt.figure(figsize=(10, 7))
-    plt.boxplot(errors, tick_labels=model_names)
-    plt.ylabel("Test error")
-    plt.title("Test error comparison")
+    plt.boxplot(scores, tick_labels=model_names)
+    plt.ylabel("Test score")
+    plt.title("Test score comparison")
     plt.grid(True)
     plt.show()
 
@@ -288,6 +310,7 @@ def solve_task(pixels, labels):
     plt.show()
 
     print("Done!")
+
 
 def task_1(data):
     
