@@ -222,6 +222,43 @@ def solve_task(pixels, labels):
             # Store params
             best_params[name][i] = best_model.get_params()
 
+    # Store parameters
+    c_list = {}
+    c_list["LogisticRegression"] = [
+        [
+            best_params["LogisticRegression"][i]["clf__C"] \
+            for i in range(number_of_outer_k_folds)
+        ]
+    ]
+    c_list["kNN"] = [
+        [
+            best_params["kNN"][i]["clf__n_neighbors"] 
+            for i in range(number_of_outer_k_folds)
+        ]
+    ]
+
+    # Print some results
+    for name, pipe in pipeline.items():
+        print(
+            "\n" + name + " classifier using " \
+            + str(number_of_outer_k_folds) \
+            + "-outer folds and " \
+            + str(number_of_inner_k_folds) \
+            + "-inner folds:"
+        )
+        print(
+            "- Average accuracy " \
+            + str(round(np.mean(train_error[name]), 4)) + ", sd " \
+            + str(round(np.std(train_error[name]), 4))
+        )
+
+        if name in ["LogisticRegression", "kNN"]:
+            print(
+                "- Average parameter " \
+                + str(round(np.mean(c_list[name]), 4)) + ", sd " \
+                + str(round(np.std(c_list[name]), 4))
+            )
+
     print("\nPlotting results...")
 
     # Create box plots of test error for all three models
@@ -235,31 +272,22 @@ def solve_task(pixels, labels):
     plt.show()
 
     # Create box plots of tuning paramers for logistic regression
-    c_list = [[
-        best_params["LogisticRegression"][i]["clf__C"] \
-        for i in range(number_of_outer_k_folds)
-    ]]
     plt.figure(figsize=(10, 7))
-    plt.boxplot(c_list, tick_labels=["LogisticRegression"])
+    plt.boxplot(c_list["LogisticRegression"], tick_labels=["LogisticRegression"])
     plt.ylabel("c")
     plt.title("Logistic regression parameter")
     plt.grid(True)
     plt.show()
 
     # Create box plots of tuning paramers for kNN
-    c_list = [
-        [
-        best_params["kNN"][i]["clf__n_neighbors"] 
-        for i in range(number_of_outer_k_folds)
-        ]
-    ]
     plt.figure(figsize=(10, 7))
-    plt.boxplot(c_list, tick_labels=["kNN"])
+    plt.boxplot(c_list["kNN"], tick_labels=["kNN"])
     plt.ylabel("k")
     plt.title("kNN parameter")
     plt.grid(True)
     plt.show()
 
+    print("Done!")
 
 def task_1(data):
     
@@ -287,7 +315,7 @@ def task_2(data):
 
 if __name__ == '__main__':
 
-    data = pd.read_csv('Carl/Project_1/Numbers.txt', sep='\s+')
-    inspect_data(data)
+    data = pd.read_csv('Carl/Project_1/Numbers.txt', sep=r'\s+')
+    #inspect_data(data)
     task_1(data)
-    task_2(data)
+    #task_2(data)
